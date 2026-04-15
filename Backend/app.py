@@ -4,8 +4,10 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import boto3
 from flask import Flask, render_template_string, request, redirect, url_for, flash, Response, jsonify
+from flask_cors import CORS  # הוספנו את הייבוא הזה
 
 app = Flask(__name__)
+CORS(app)  # השורה הזו פותחת את הגישה ל-Frontend
 app.secret_key = "aviv-cloud-mission-complete-v9"
 
 # --- AWS Configuration ---
