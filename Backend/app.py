@@ -4,11 +4,11 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import boto3
 from flask import Flask, render_template_string, request, redirect, url_for, flash, Response, jsonify
-from flask_cors import CORS  # הוספנו את הייבוא הזה
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # השורה הזו פותחת את הגישה ל-Frontend
-app.secret_key = "aviv-cloud-mission-complete-v9"
+CORS(app)
+app.secret_key = "aviv-cloud-mission-final-v14"
 
 # --- AWS Configuration ---
 SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/544471418394/mission-queue"
@@ -43,6 +43,7 @@ HTML_TEMPLATE = """
         body { background-color: #F8F9FC; }
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow: hidden; }
+        .checkbox-custom { width: 1.2rem; height: 1.2rem; cursor: pointer; accent-color: #635BFF; }
     </style>
 </head>
 <body class="min-h-screen text-slate-800 font-sans">
@@ -137,12 +138,20 @@ HTML_TEMPLATE = """
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                <h2 class="text-xl font-bold text-gray-800 tracking-tight">Active Infrastructure</h2>
-                <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">{{ data_rows|length }} Active</span>
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold text-gray-800 tracking-tight">Active Infrastructure</h2>
+                    <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">{{ data_rows|length }} Active</span>
+                </div>
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="hidden bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="selectedCount">0</span>)
+                </button>
             </div>
             <table class="w-full text-left">
                 <thead class="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest">
                     <tr>
+                        <th class="p-5 w-10 text-center">
+                            <input type="checkbox" id="selectAll" onclick="toggleAll(this)" class="checkbox-custom rounded">
+                        </th>
                         <th class="p-5 font-semibold">ID</th>
                         <th class="p-5 font-semibold">Name</th>
                         <th class="p-5 font-semibold text-center">Instance Type</th>
@@ -152,6 +161,9 @@ HTML_TEMPLATE = """
                 <tbody class="divide-y divide-gray-50">
                     {% for row in data_rows %}
                     <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="p-5 text-center">
+                            <input type="checkbox" class="instance-checkbox checkbox-custom rounded" value="{{ row['id'] }}" onclick="updateBulkDeleteVisibility()">
+                        </td>
                         <td class="p-5 text-gray-400 font-mono">#{{ row['id'] }}</td>
                         <td class="p-5 font-bold text-gray-700">{{ row['name'] }}</td>
                         <td class="p-5 text-center">
@@ -161,7 +173,7 @@ HTML_TEMPLATE = """
                         </td>
                         <td class="p-5 text-right flex justify-end gap-2">
                             <button onclick="fetchPreview({{ row['id'] }})" class="text-indigo-400 hover:text-indigo-600 p-2"><i class="fa-solid fa-eye text-lg"></i></button>
-                            <form action="/delete/{{ row['id'] }}" method="POST" class="inline">
+                            <form action="/delete/{{ row['id'] }}" method="POST" class="inline" onsubmit="return confirm('Delete this instance?');">
                                 <button class="text-red-300 hover:text-red-500 p-2"><i class="fa-solid fa-trash-can text-lg"></i></button>
                             </form>
                         </td>
@@ -196,6 +208,41 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.instance-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateBulkDeleteVisibility();
+        }
+
+        function updateBulkDeleteVisibility() {
+            const checkboxes = document.querySelectorAll('.instance-checkbox:checked');
+            const bulkBtn = document.getElementById('bulkDeleteBtn');
+            const countSpan = document.getElementById('selectedCount');
+            countSpan.innerText = checkboxes.length;
+            if (checkboxes.length > 0) { bulkBtn.classList.remove('hidden'); }
+            else { 
+                bulkBtn.classList.add('hidden'); 
+                document.getElementById('selectAll').checked = false;
+            }
+        }
+
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.instance-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+            if (confirm(`Are you sure you want to delete ${ids.length} instances?`)) {
+                fetch('/delete_multiple', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: ids })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') { window.location.reload(); }
+                    else { alert("Error during bulk delete"); }
+                });
+            }
+        }
+
         function fetchPreview(id) {
             fetch(`/api/preview/${id}`)
                 .then(res => res.json())
@@ -203,7 +250,6 @@ HTML_TEMPLATE = """
                     document.getElementById('jsonPreview').innerText = JSON.stringify(data, null, 4);
                     document.getElementById('modalFileName').innerText = "config_" + data.Base_Machine_Name + ".json";
                     document.getElementById('downloadBtn').href = "/download/" + id;
-                    
                     const modal = document.getElementById('modal');
                     modal.classList.remove('opacity-0', 'pointer-events-none');
                     document.body.classList.add('modal-active');
@@ -232,8 +278,6 @@ def index():
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute("SELECT id, name, status FROM mission_data WHERE id > 4 ORDER BY id DESC;")
                 db_rows = cur.fetchall()
-                
-                # עיבוד הנתונים להצגה נקייה בטבלה
                 for r in db_rows:
                     try:
                         data = json.loads(r['status'])
@@ -241,14 +285,12 @@ def index():
                     except:
                         r['display_type'] = r['status']
                     rows.append(r)
-                    
     except Exception as e:
         flash(f"DB Error: {e}", "error")
     return render_template_string(HTML_TEMPLATE, data_rows=rows, last_id=last_id)
 
 @app.route('/add', methods=['POST'])
 def add_entry():
-    # איסוף כל 6 השדות מהטופס
     name = request.form.get('name')
     instances = request.form.get('instances')
     os_type = request.form.get('os')
@@ -258,7 +300,6 @@ def add_entry():
     
     if name and instance_type:
         try:
-            # בניית אובייקט הנתונים המלא
             full_payload = {
                 "Base_Machine_Name": name,
                 "Number_of_Instances": instances,
@@ -266,30 +307,18 @@ def add_entry():
                 "Instance_Type": instance_type,
                 "Post_Launch_Script": script,
                 "Infrastructure_Output_Type": output_type,
-                "Created_At": "2026-04-14 21:51:00"
+                "Created_At": "2026-04-15 17:45:00"
             }
-
-            # 1. שמירה ב-RDS - אנחנו שומרים את ה-JSON המלא בתוך עמודת ה-status
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "INSERT INTO mission_data (name, status) VALUES (%s, %s) RETURNING id;", 
-                        (name, json.dumps(full_payload))
-                    )
+                    cur.execute("INSERT INTO mission_data (name, status) VALUES (%s, %s) RETURNING id;", (name, json.dumps(full_payload)))
                     new_id = cur.fetchone()[0]
 
-            # 2. AWS Operations (SQS & S3)
             sqs_client.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(full_payload))
-            s3_client.put_object(
-                Bucket=S3_BUCKET_NAME, 
-                Key=f"logs/config_{name}.json", 
-                Body=json.dumps(full_payload, indent=4)
-            )
-
-            # 3. SNS - מעוצב עם כל הפרטים
+            s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=f"logs/config_{name}.json", Body=json.dumps(full_payload, indent=4))
+            
             sns_message = f"""
 ======= 🚀 CLOUD DEPLOYMENT ALERT =======
-
 📌 Project: {name}
 -------------------------------------------
 🖥️  Type:      {instance_type}
@@ -300,42 +329,35 @@ def add_entry():
 -------------------------------------------
 ✅ Status: All details saved to RDS & S3
 🛠️  Managed by: Aviv's Cloud Infrastructure
-
 ===========================================
 """
             sns_client.publish(TopicArn=SNS_TOPIC_ARN, Message=sns_message, Subject=f"🔥 Full Config Created: {name}")
 
-            flash(f"Successfully created '{name}' with all 6 parameters!", "success")
+            flash(f"Successfully created '{name}'!", "success")
             return redirect(url_for('index', last_id=new_id))
-            
         except Exception as e:
             flash(f"System Error: {str(e)}", "error")
-            
     return redirect(url_for('index'))
 
 @app.route('/api/preview/<int:entry_id>')
 def api_preview(entry_id):
-    """מושך את ה-JSON המלא מה-DB ומחזיר אותו לתצוגה המקדימה"""
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT * FROM mission_data WHERE id = %s;", (entry_id,))
+                cur.execute("SELECT status FROM mission_data WHERE id = %s;", (entry_id,))
                 row = cur.fetchone()
-                # מחזירים את ה-JSON ששמרנו בתוך ה-status
                 return jsonify(json.loads(row['status']))
     except:
         return jsonify({"error": "Not found"}), 404
 
 @app.route('/download/<int:entry_id>')
 def download_config(entry_id):
-    """מוריד את קובץ ה-JSON המלא עם כל הפרטים המקוריים"""
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT * FROM mission_data WHERE id = %s;", (entry_id,))
+                cur.execute("SELECT name, status FROM mission_data WHERE id = %s;", (entry_id,))
                 row = cur.fetchone()
                 full_json = json.loads(row['status'])
-                
                 return Response(
                     json.dumps(full_json, indent=4),
                     mimetype="application/json",
@@ -348,12 +370,79 @@ def download_config(entry_id):
 def delete_entry(entry_id):
     try:
         with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM mission_data WHERE id = %s;", (entry_id,))
-        flash("Record deleted.", "success")
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # מביאים את כל הנתונים לפני המחיקה
+                cur.execute("SELECT name, status FROM mission_data WHERE id = %s;", (entry_id,))
+                row = cur.fetchone()
+                if row:
+                    name = row['name']
+                    details = json.loads(row['status'])
+                    
+                    # SNS: Detailed Deletion Message
+                    del_message = f"""
+🗑️ INFRASTRUCTURE REMOVED
+------------------------------------------
+Asset Name: {name}
+Database ID: #{entry_id}
+
+📜 DELETED CONFIG DETAILS:
+- Scale:    {details.get('Number_of_Instances', 'N/A')} Nodes
+- Machine:  {details.get('Instance_Type', 'N/A')}
+- OS:       {details.get('Operating_System', 'N/A')}
+- Script:   {details.get('Post_Launch_Script', 'N/A')}
+- Output:   {details.get('Infrastructure_Output_Type', 'N/A')}
+------------------------------------------
+Action: Permanent Deletion Completed.
+"""
+                    sns_client.publish(TopicArn=SNS_TOPIC_ARN, Message=del_message, Subject=f"Infrastructure Deleted: {name}")
+                    
+                    cur.execute("DELETE FROM mission_data WHERE id = %s;", (entry_id,))
+        
+        flash(f"Record '{name}' deleted.", "success")
     except Exception as e:
         flash(f"Error: {e}", "error")
     return redirect(url_for('index'))
+
+@app.route('/delete_multiple', methods=['POST'])
+def delete_multiple():
+    data = request.get_json()
+    ids = data.get('ids', [])
+    if not ids:
+        return jsonify({"status": "error"}), 400
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                id_tuple = tuple(int(i) for i in ids)
+                
+                # מביאים פרטים על כל ה-instances שנבחרו למחיקה
+                cur.execute("SELECT id, name, status FROM mission_data WHERE id IN %s;", (id_tuple,))
+                deleted_rows = cur.fetchall()
+                
+                # בניית דוח מפורט ל-SNS
+                report_items = []
+                for r in deleted_rows:
+                    det = json.loads(r['status'])
+                    report_items.append(f"• {r['name']} (#{r['id']}): {det.get('Number_of_Instances')}x {det.get('Instance_Type')}")
+                
+                bulk_message = f"""
+🚨 BULK TERMINATION EVENT
+------------------------------------------
+Total Nodes Purged: {len(ids)}
+
+DETAILED LIST:
+{chr(10).join(report_items)}
+
+------------------------------------------
+Priority: High - Cleanup successful.
+"""
+                sns_client.publish(TopicArn=SNS_TOPIC_ARN, Message=bulk_message, Subject="Infrastructure Alert: Bulk Action")
+                
+                cur.execute("DELETE FROM mission_data WHERE id IN %s;", (id_tuple,))
+        
+        flash(f"Deleted {len(ids)} instances.", "success")
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
