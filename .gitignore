@@ -3,3 +3,10 @@ logs/
 __pycache__/
 .bash_history
 .env
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+# חוץ מהקובץ tfvars אם המרצה ביקש אותו ספציפית, 
+# אבל בדרך כלל לא מעלים אותו כי יש שם סיסמאות.
