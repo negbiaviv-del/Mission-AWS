@@ -1,68 +1,74 @@
-# AWS 3-Tier Infrastructure & Monitoring System
+# AWS 3-Tier Infrastructure & Monitoring System (Terraform Managed)
 
-This project demonstrates a scalable and secure 3-tier cloud architecture deployed on AWS. It features a decoupled monitoring system, automated log management, and a secure networking layer using a custom VPC and Subnets.
+This project demonstrates a production-grade, scalable, and secure 3-tier cloud architecture on AWS. The entire infrastructure is provisioned and managed using **Terraform (Infrastructure as Code)**, ensuring consistency, version control, and automated deployments.
+
+---
 
 ## 🏗️ Architecture Overview
-The infrastructure follows AWS Best Practices for security and isolation, specifically optimized for cost and performance.
+The system is designed for high availability and strict security, following the AWS Well-Architected Framework.
 
-* **VPC:** Custom Virtual Private Cloud (`10.0.0.0/16`).
-* **Public Subnet:** Hosts the user-facing Frontend (Nginx) and acts as a Bastion Host.
-* **Private Subnet:** Houses the application logic (Flask), background workers (Python), and the managed database (RDS).
+### 1. Networking (VPC & Multi-AZ)
+* **Custom VPC:** `10.0.0.0/16` isolated environment.
+* **Public Subnets:** Spread across `us-east-1a` and `us-east-1b` for the Application Load Balancer (ALB) and Frontend/Bastion host.
+* **Private Subnets:** Isolated subnets for the Backend, Worker, and RDS, preventing direct internet access.
+* **Internet Gateway (IGW):** Provides connectivity for public resources.
 
-### Component Breakdown:
+### 2. Compute & Load Balancing
+* **Application Load Balancer (ALB):** Distributes incoming traffic across Frontend instances in multiple AZs.
+* **Frontend (Nginx):** Acts as a reverse proxy. Public IP: `44.207.86.60`.
+* **Backend (Flask):** Private REST API handling business logic.
+* **Worker Service:** A background monitoring service that processes logs and triggers alerts.
 
-| Component | Function | Networking | IP / Port |
-| :--- | :--- | :--- | :--- |
-| **Frontend** | Nginx Reverse Proxy | Public | `32.192.23.230:80` |
-| **Backend** | Flask REST API | Private | `10.0.2.246:5000` |
-| **Worker** | Monitoring Service | Private | `10.0.2.104` |
-| **Database** | RDS PostgreSQL | Private | `10.0.2.30:5432` |
-| **Storage** | S3 Logs Bucket | Global | `s3://new-mission-bucket` |
-| **Alerts** | SNS Topic | Global | `arn:aws:sns:us-east-1:544471418394:mission-alerts` |
-
----
-
-## 🛠️ Infrastructure Details
-
-### 1. Networking & Security
-The architecture utilizes a direct **Internet Gateway (IGW)** routing strategy from the private route table to simplify outbound connectivity for the worker, eliminating the need for a costly NAT Gateway.
-
-* **Security Groups (Least Privilege):**
-    * `SG-Backend`: Restricted to traffic strictly from the Frontend.
-    * `SG-Database`: Configured using **Security Group Referencing**. It accepts inbound traffic on Port 5432 **only** from the `SG-Backend` and `SG-Worker` group IDs.
-    * `SG-Worker`: Allows SSH for management and HTTPS (443) for outbound AWS API calls to S3 and SNS.
-
-### 2. Database Initialization
-The RDS database is initialized using a custom Python script (`setup_db.py`) utilizing the `psycopg2` adapter.
-* **Schema:** Creates the `mission_data` table (`id SERIAL PRIMARY KEY`, `name TEXT`, `status TEXT`).
-* **Seeding:** Automatically inserts initial operational statuses for the Frontend and Backend servers to verify connectivity.
-
-### 3. Monitoring & Formatted SNS Alerts
-A custom background service (`worker.service`) manages the log lifecycle.
-* **Custom Python Logic:** Using the `boto3` SDK, the Worker uploads logs to S3 and immediately triggers an **SNS Publish** event.
-* **Why Boto3?** Standard S3 Event Notifications send raw, unreadable JSON. By triggering SNS via Python, we send a **clean, human-readable email** containing a formatted success summary.
+### 3. Database & Storage
+* **RDS PostgreSQL:** A managed database instance residing in the private subnets.
+* **S3 Buckets:**
+    * `new-mission-bucket`: Stores application logs and shared data.
+    * `terraform-state-bucket`: Manages the remote Terraform state file for team collaboration.
 
 ---
 
-## 🚀 Operations & Management
+## 🛠️ Terraform Implementation (IaC)
 
-### File Management Across Tiers
-Moving files between isolated instances (e.g., from Backend to Worker) is handled securely:
-1. **Direct Internal Transfer:** Using `rsync` or `scp` via private IPs (`10.0.2.104`). This requires temporarily loading the `.pem` key onto the source server with strict `chmod 400` permissions.
-2. **S3 Intermediary (Best Practice):** Utilizing the `new-mission-bucket` as a secure bridge to upload files from the Backend and pull them to the Worker using the `aws s3 cp` command, completely avoiding the placement of SSH keys on private servers.
+The infrastructure is broken down into modular components for maintainability:
 
-### Security & Version Control
-To maintain strict security within the repository, a `.gitignore` file is implemented to ensure:
-* **Private Keys:** AWS SSH keys (e.g., `avivPair-01.pem`) are explicitly ignored to prevent unauthorized infrastructure access.
-* **Log Files:** Dynamic files like `output.log` and `check.log` are excluded to keep commit histories clean.
+### Modular Structure
+* **Networking Module:** Manages VPC, Subnets, Route Tables, and IGW.
+* **Security Module:** Handles **Security Group Referencing** (e.g., DB only accepts traffic from Backend/Worker) and IAM Roles.
+* **Compute Module:** Provisions EC2 instances with **IAM Instance Profiles**, removing the need for local AWS keys.
+* **Database Module:** Provisions the RDS instance and integrates with AWS Secrets Manager.
 
-### Accessing Private Instances:
+### Key IaC Features
+* **Remote State Management:** State is stored in S3 with DynamoDB locking to prevent concurrent modification.
+* **Secrets Management:** Database credentials are securely stored in **AWS Secrets Manager**, fetched dynamically by Terraform.
+* **Variables & Outputs:** Use of `terraform.tfvars` for environment-specific configurations (e.g., region, instance types).
+
+---
+
+## 🔒 Security & IAM
+* **Least Privilege:** Each component has a specific IAM Role. The Worker can only `PutObject` to S3 and `Publish` to SNS.
+* **Security Groups:** * `SG-Database`: Port 5432 restricted to `SG-Backend` and `SG-Worker`.
+    * `SG-Backend`: Port 5000 restricted to `SG-Frontend`.
+* **Bastion Access:** Secure SSH access to private instances via the Frontend/Bastion host using `avivPair-01.pem`.
+
+---
+
+## 🚀 Monitoring & SNS Alerts
+The **Worker** service utilizes custom Python logic with the `boto3` SDK:
+1. **Log Collection:** Monitors system and application logs.
+2. **S3 Archive:** Uploads logs to `s3://new-mission-bucket`.
+3. **SNS Notification:** Sends human-readable email alerts via **AWS SNS** (`mission-alerts`) upon critical events or successful log rotations.
+
+---
+
+## 💻 Operations
+
+### Deployment
 ```bash
-# Jump through Bastion (Frontend) to Worker
-ssh -i "avivPair-01.pem" ec2-user@32.192.23.230
-ssh -i "avivPair-01.pem" ec2-user@10.0.2.104
+# Initialize Terraform and S3 backend
+terraform init
 
-# Managing the Worker Service:
-sudo systemctl daemon-reload
-sudo systemctl restart worker
-sudo systemctl status worker
+# Preview changes
+terraform plan
+
+# Apply infrastructure changes
+terraform apply -var-file="terraform.tfvars"
