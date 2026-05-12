@@ -1,4 +1,3 @@
-# --- משתני ליבה (Core) ---
 variable "aws_region" {
   type    = string
   default = "us-east-1"
@@ -23,8 +22,6 @@ variable "subnet_id" {
 variable "iam_role" {
   type = string
 }
-
-# --- משתני מודולים (התוספות החדשות) ---
 
 variable "bucket_name" {
   type = string
@@ -52,7 +49,7 @@ variable "db_user" {
 
 variable "db_password" {
   type      = string
-  sensitive = true # הגדרה חשובה לסיסמאות כדי שלא יודפסו בטרמינל
+  sensitive = true
 }
 
 variable "sns_topic_name" {
@@ -61,4 +58,9 @@ variable "sns_topic_name" {
 
 variable "secret_name" {
   type = string
+}
+
+variable "secret_description" {
+  type        = string
+  description = "The description for the RDS secret"
 }
