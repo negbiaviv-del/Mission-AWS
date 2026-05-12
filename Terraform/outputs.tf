@@ -11,3 +11,8 @@ output "database_endpoint" {
 output "s3_bucket_name" {
   value = module.my_s3_bucket.bucket_name
 }
+
+output "instance_public_ip" {
+  description = "Public IP of the frontend server"
+  value       = aws_instance.frontend_server.public_ip
+}

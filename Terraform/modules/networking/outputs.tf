@@ -1,14 +1,15 @@
 output "vpc_id" {
-  description = "The ID of the VPC"
-  value       = aws_vpc.main_vpc.id
+  value = aws_vpc.main.id
 }
 
 output "subnet_id" {
-  description = "The ID of the Subnet"
-  value       = aws_subnet.main_subnet.id
+  value = aws_subnet.main.id
 }
 
 output "subnet2_id" {
-  description = "The ID of the second Subnet"
-  value       = aws_subnet.second_subnet.id
+  value = aws_subnet.second.id
+}
+
+output "web_sg_id" {
+  value = aws_security_group.web_sg.id
 }
