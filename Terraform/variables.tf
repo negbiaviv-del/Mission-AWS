@@ -64,3 +64,8 @@ variable "secret_description" {
   type        = string
   description = "The description for the RDS secret"
 }
+
+variable "my_ip" {
+  description = "Your public IP address"
+  type        = string
+}

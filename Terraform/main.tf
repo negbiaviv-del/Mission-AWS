@@ -4,6 +4,7 @@ module "networking" {
   source      = "./modules/networking"
   vpc_cidr    = var.vpc_cidr
   subnet_cidr = var.subnet_cidr
+  my_ip = var.my_ip
 }
 
 # --- מודול הרשאות (IAM) ---

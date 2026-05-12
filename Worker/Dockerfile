@@ -7,5 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# כאן אנחנו אומרים לדוקר להריץ את הוורקר שמאזין ל-SQS
-CMD ["python", "worker_sqs.py"]
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "app:app"]
