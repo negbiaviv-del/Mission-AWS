@@ -3,7 +3,7 @@ import os
 
 # --- הגדרות (מעודכן לפי ה-ARN שלך) ---
 BUCKET_NAME = "new-mission-bucket"
-TOPIC_ARN = "arn:aws:sns:us-east-1:544471418394:mission-alerts"
+TOPIC_ARN = arn:aws:sns:us-east-1:544471418394:mission-alerts:b6d08965-e410-4815-8eb7-f58601c48552
 REGION = "us-east-1"
 
 # שימוש ב-Session כדי להבטיח עבודה נכונה עם ה-IAM Role של ה-EC2
