@@ -1,0 +1,12 @@
+---
+# נתיבים
+tf_dir: "~/Mission-AWS/Terraform/environments/prod"
+tf_vars_file: "terraform-prod.tfvars"
+
+# הגדרות אפליקציה
+app_env: "production"
+nginx_port: 80
+server_name: "prod.aviv-mission.com"
+
+# משתני AWS (לשימוש בפלייבוקים)
+aws_region: "us-east-1"

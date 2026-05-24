@@ -1,7 +1,5 @@
-# 1. יצירת התפקיד והגדרת ה-Trust Policy
 resource "aws_iam_role" "ec2_role" {
-  name = var.role_name
-
+  name = "backend-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -16,14 +14,55 @@ resource "aws_iam_role" "ec2_role" {
   })
 }
 
-# 2. צירוף הרשאות (Policy) לתפקיד
 resource "aws_iam_role_policy_attachment" "ssm_attach" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# 3. יצירת Instance Profile (ה"עטיפה" שמאפשרת לחבר את התפקיד לשרת ה-EC2)
+resource "aws_iam_role_policy" "app_permissions" {
+  name = "backend-app-policy"
+  role = aws_iam_role.ec2_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "*" 
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:DeleteObject"
+        ]
+        Resource = "*" 
+      },
+      {
+        Effect = "Allow"
+        Action = "sns:Publish"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = "*" 
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "${var.role_name}-profile"
+  name = "backend-ec2-profile"
   role = aws_iam_role.ec2_role.name
 }

@@ -15,10 +15,6 @@ variable "key_name" {
   type = string
 }
 
-variable "subnet_id" {
-  type = string
-}
-
 variable "iam_role" {
   type = string
 }
@@ -31,25 +27,12 @@ variable "vpc_cidr" {
   type = string
 }
 
-variable "subnet_cidr" {
-  type = string
-}
-
-variable "subnet2_cidr" {
-  type = string
-}
-
 variable "db_name" {
   type = string
 }
 
 variable "db_user" {
   type = string
-}
-
-variable "db_password" {
-  type      = string
-  sensitive = true
 }
 
 variable "sns_topic_name" {
@@ -67,5 +50,16 @@ variable "secret_description" {
 
 variable "my_ip" {
   description = "Your public IP address"
+  type        = string
+}
+
+variable "master_db_password" {
+  description = "The master password for the RDS PostgreSQL database"
+  type        = string
+  sensitive   = true # שומר על הסיסמה חסויה בתוך ה-Logs
+}
+
+variable "my_alert_email" {
+  description = "Email address for SNS subscriptions"
   type        = string
 }

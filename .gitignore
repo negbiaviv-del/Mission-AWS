@@ -1,11 +1,28 @@
+# Logs & Cache
 *.log
 logs/
 __pycache__/
 .bash_history
-.env
+
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
 *.tfvars
+
+# Ansible
+ansible/inventory.ini
+inventory.ini
+*.retry
+
+# SSH Keys, Secrets & Environment
 *.pem
+*.key
+.env
+
+# OS / Editor Files
+.DS_Store
+.vscode/
+
+Architecture.txt

@@ -1,27 +1,33 @@
-# 1. הגדרת קבוצת הרשתות למסד הנתונים
-resource "aws_db_subnet_group" "default" {
-  name       = "main-db-subnet-group"
+# 1. יצירת קבוצת הסאבנטים למסד הנתונים
+resource "aws_db_subnet_group" "rds_group" {
+  name       = var.db_subnet_group_name
   subnet_ids = var.subnet_ids
 
   tags = {
-    Name = "My DB subnet group"
+    Name = "Main-RDS-Subnet-Group"
   }
 }
 
 # 2. הקמת מסד הנתונים (PostgreSQL)
 resource "aws_db_instance" "postgres" {
-  allocated_storage    = 20
-  engine               = "postgres"
-  engine_version       = "16.3" # גרסת פוסטגרס יציבה ונפוצה
-  instance_class       = "db.t3.micro"
-  db_name              = "missiondb"
-  username             = "dbadmin"
-  password             = "MissionPassword123!" # בסביבת פרודקשן משתמשים ב-Secrets Manager, אבל למעבדה זה בסדר
-  db_subnet_group_name = aws_db_subnet_group.default.name
-  skip_final_snapshot  = true
-  publicly_accessible  = false # השארנו אותו פרטי לאבטחה מירבית
+  allocated_storage      = var.db_storage
+  engine                 = "postgres"
+  engine_version         = var.db_engine_version
+  instance_class         = var.db_instance_class
+  db_name                = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+  
+  db_subnet_group_name   = aws_db_subnet_group.rds_group.name
+  vpc_security_group_ids = [var.db_sg_id] # חיבור ל-Security Group המוגן
+  
+  publicly_accessible    = false # השארת בסיס הנתונים פרטי (אבטחה)
+  skip_final_snapshot    = true  # מאפשר מחיקה מהירה ללא Snapshots בסוף הפרויקט
+  
+  backup_retention_period = 0 
+  deletion_protection     = false
 
   tags = {
-    Name = "Mission-PostgreSQL"
+    Name = "Mission-PostgreSQL-Instance"
   }
 }

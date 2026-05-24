@@ -1,0 +1,13 @@
+-  name: config if missing 
+   hosts: web
+   become: yes
+
+   tasks:
+     - name: check if nginx.conf only if missing
+       ansible.builtin.copy:
+         src: nginx.conf
+         dest: /etc/nginx/nginx.conf
+         owner: root
+         group: root
+         mode: '0644'
+         force: no

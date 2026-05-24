@@ -1,0 +1,31 @@
+---
+# ==========================================
+# 1. הגדרת שרת ה-Frontend (Nginx)
+# ==========================================
+- name: Configure Frontend Web Server
+  hosts: frontend
+  become: yes
+  roles:
+    - nginx
+
+# ==========================================
+# 2. הגדרת שרת ה-Backend (אפליקציית Flask)
+# ==========================================
+- name: Configure Backend Application Server
+  hosts: backend
+  become: yes
+  roles:
+    - role: app
+      vars:
+        server_type: "backend"
+
+# ==========================================
+# 3. הגדרת שרת ה-Worker (האזנה ל-SQS)
+# ==========================================
+- name: Configure Worker Server
+  hosts: worker
+  become: yes
+  roles:
+    - role: app
+      vars:
+        server_type: "worker"

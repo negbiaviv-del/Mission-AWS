@@ -1,0 +1,11 @@
+---
+- name: Infrastructure Deployment with Terraform
+  hosts: localhost
+  connection: local
+  
+  vars:
+    # כאן אנחנו מגדירים לאיזו סביבה ה-Role ייכנס
+    tf_dir: "~/Mission-AWS/Terraform/environments/dev"
+
+  roles:
+    - terraform
