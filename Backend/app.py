@@ -15,7 +15,9 @@ app.secret_key = os.getenv("SECRET_KEY", "default-dev-key")
 # --- AWS Configuration (Using Environment Variables) ---
 SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
+
+SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:544471418394:aviv-project-alerts-v2").strip()
+
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
 s3_client = boto3.client('s3', region_name=AWS_REGION)
@@ -24,10 +26,11 @@ sqs_client = boto3.client('sqs', region_name=AWS_REGION)
 
 # --- Database Configuration (Using Environment Variables) ---
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "127.0.0.1"),
+    "host": os.getenv("DB_HOST"),
     "database": os.getenv("DB_NAME", "postgres"),
     "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD")
+    "password": os.getenv("DB_PASSWORD"),
+    "sslmode": "require"  
 }
 
 # --- HTML Template ---
@@ -271,6 +274,10 @@ HTML_TEMPLATE = """
 """
 
 def get_db_connection():
+    print(f"DEBUG: Connecting to {DB_CONFIG.get('host')} as {DB_CONFIG.get('user')}")
+    
+    DB_CONFIG['sslmode'] = 'require' 
+    
     return psycopg2.connect(**DB_CONFIG)
 
 @app.route('/')
@@ -345,8 +352,7 @@ def add_entry():
 🛠️  Managed by: Aviv's Cloud Infrastructure
 ===========================================
 """
-            sns_client.publish(TopicArn=SNS_TOPIC_ARN, Message=sns_message, Subject=f"🔥 Full Config Created: {name}")
-
+            sns_client.publish(TopicArn="arn:aws:sns:us-east-1:544471418394:aviv-project-alerts-v2", Message=sns_message, Subject=f"Full Config Created: {name}")
             flash(f"Successfully created '{name}'!", "success")
             return redirect(url_for('index', last_id=new_id))
         except Exception as e:

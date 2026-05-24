@@ -1,0 +1,10 @@
+Host frontend
+    HostName 3.235.93.189
+    User ec2-user
+    IdentityFile ./avivPair-01.pem
+
+Host backend
+    HostName 10.0.1.68
+    User ec2-user
+    ProxyJump frontend
+    IdentityFile ./avivPair-01.pem

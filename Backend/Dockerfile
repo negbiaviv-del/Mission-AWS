@@ -16,4 +16,12 @@ COPY . .
 EXPOSE 5000
 
 # הפקודה שמריצה את השרת
-CMD ["python", "app.py"]
+RUN pip install gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+
+# העתקת הסקריפט לקונטיינר
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# שימוש בסקריפט כנקודת כניסה
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,23 @@
+- name: install and start any package
+  hosts: "{{ target_hosts }}"
+  become: true
+
+  vars:
+    packeage_name: 
+    service_name: 
+
+  tasks:
+    - name: Update package cache
+      yum:
+        update_cache: true
+      
+    - name: Install package
+      yum:
+        name: "{{ packeage_name }}"
+        state: latest
+
+    - name: Ensure package is running and enabled
+      ansible.builtin.service:
+        name: "{{ service_name }}"
+        state: started
+        enabled: true
