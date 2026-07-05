@@ -7,8 +7,12 @@ module "networking" {
 
 # --- מודול הרשאות (IAM) ---
 module "iam" {
-  source    = "./modules/iam"
-  role_name = var.iam_role
+  source        = "./modules/iam"
+  role_name     = var.iam_role
+  secret_arn    = module.secrets.secret_arn
+  s3_bucket_arn = module.s3.bucket_arn
+  sns_topic_arn = module.sns.topic_arn
+  sqs_queue_arn = aws_sqs_queue.worker_queue.arn
 }
 
 # --- מודול שרתים (EC2 Module) ---
@@ -19,7 +23,7 @@ module "ec2_instances" {
   key_name          = var.key_name
 
   public_subnet_id  = module.networking.public_subnet_1_id
-  private_subnet_id = module.networking.public_subnet_1_id
+  private_subnet_id = module.networking.private_subnet_1_id
 
   nginx_sg_id       = module.networking.nginx_sg_id
   backend_sg_id     = module.networking.backend_sg_id

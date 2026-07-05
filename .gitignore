@@ -10,6 +10,7 @@ __pycache__/
 *.tfstate.backup
 .terraform.lock.hcl
 *.tfvars
+secrets.auto.tfvars
 
 # Ansible
 ansible/inventory.ini

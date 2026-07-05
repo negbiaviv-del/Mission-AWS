@@ -12,6 +12,22 @@ resource "aws_internet_gateway" "gw" {
   tags   = { Name = "main-igw" }
 }
 
+# ---------------------------------------------------------
+# תוספת התיקון: Elastic IP ו-NAT Gateway
+# ---------------------------------------------------------
+resource "aws_eip" "nat" {
+  domain = "vpc"
+  tags   = { Name = "nat-eip" }
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_1.id # יושב בסאבנט הציבורי הראשון
+
+  tags = { Name = "main-nat-gateway" }
+  depends_on = [aws_internet_gateway.gw]
+}
+
 # 3. טבלת ניתוב ציבורית (Public Route Table)
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -24,7 +40,7 @@ resource "aws_route_table" "public" {
   tags = { Name = "public-route-table" }
 }
 
-# 4. סאבנטים ציבוריים (עבור Nginx וגם עבור ה-Backend - כדי לחסוך NAT Gateway)
+# 4. סאבנטים ציבוריים (עבור Nginx וה-NAT Gateway)
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_1_cidr
@@ -52,19 +68,44 @@ resource "aws_route_table_association" "pub2_assoc" {
   route_table_id = aws_route_table.public.id
 }
 
-# 5. סאבנטים פרטיים (עבור ה-RDS - מוגנים לגמרי)
+# ---------------------------------------------------------
+# תוספת התיקון: טבלת ניתוב פרטית עבור ה-NAT Gateway
+# ---------------------------------------------------------
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id # הפניה ל-NAT במקום לאינטרנט החשוף
+  }
+
+  tags = { Name = "private-route-table" }
+}
+
+# 5. סאבנטים פרטיים (עבור Backend, Worker ו-RDS - מוגנים לגמרי מהאינטרנט)
 resource "aws_subnet" "private_1" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_subnet_1_cidr
   availability_zone = "us-east-1a"
-  tags              = { Name = "private-db-subnet-1" }
+  tags              = { Name = "private-subnet-1" }
 }
 
 resource "aws_subnet" "private_2" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_subnet_2_cidr
   availability_zone = "us-east-1b"
-  tags              = { Name = "private-db-subnet-2" }
+  tags              = { Name = "private-subnet-2" }
+}
+
+# חיבור הסאבנטים הפרטיים לטבלה הפרטית (כדי שיוכלו לצאת לאינטרנט דרך ה-NAT)
+resource "aws_route_table_association" "priv1_assoc" {
+  subnet_id      = aws_subnet.private_1.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "priv2_assoc" {
+  subnet_id      = aws_subnet.private_2.id
+  route_table_id = aws_route_table.private.id
 }
 
 # 6. DB Subnet Group - חובה עבור יצירת RDS
@@ -122,7 +163,7 @@ resource "aws_security_group" "backend_sg" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = [aws_security_group.nginx_sg.id] # מחליפים את ה-cidr_blocks בזה
+    security_groups = [aws_security_group.nginx_sg.id]
   }
 
   egress {

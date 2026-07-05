@@ -134,9 +134,15 @@ Ansible manages the complete lifecycle of the servers, utilizing dynamic invento
 ## 🔐 Security & Secrets Management
 This project strictly adheres to DevOps security best practices:
 * **No Hardcoded Secrets:** Private keys (`.pem`), database passwords, and runtime environments (`.env`) are **never** committed to version control.
+* **Local Secrets File:** Sensitive deployment variables, such as the RDS master password, are managed via a local `secrets.auto.tfvars` file. This file is strictly excluded from Git via `.gitignore` to maintain absolute security.
 * **Template Generation:** Ansible utilizes an `env.j2` template file to dynamically build the production `.env` file directly on the target servers during deployment.
 * **Example Files Provided:** An `env.example` file is included in the repository to demonstrate the required environment variables without exposing sensitive data.
 * **SSH Bastion Host (ProxyJump):** Ansible accesses the private subnets (Backend & Worker) securely by tunneling SSH connections through the public Frontend server.
+
+### Security Enhancements & Network Isolation
+To enforce a strict and secure 3-tier architecture, the internal network routing has been refactored:
+* **Private Tier Isolation:** Backend and Worker EC2 instances are now explicitly deployed within Private Subnets and do not receive public IP addresses (`associate_public_ip_address = false`).
+* **Secure Outbound Traffic:** An Internet Gateway (IGW) routing strategy is utilized to simplify connectivity and reduce costs. The private route tables direct outbound internet traffic via the Internet Gateway, while security groups strictly block unauthorized inbound traffic, ensuring instances remain isolated from direct external access.
 
 ---
 
@@ -146,6 +152,9 @@ This project strictly adheres to DevOps security best practices:
 * Terraform and Ansible installed on the local machine.
 * Valid AWS Credentials configured.
 * Your SSH Private Key (`.pem`) placed in the correct local directory (`~/.ssh/`).
+* **Local Secrets Configuration:** Before running the deployment, create a file named `secrets.auto.tfvars` inside the `Terraform/` directory and define your master database password:
+  ```hcl
+  master_db_password = "YourSecurePasswordHere!"
 
 ### One-Click Execution
 The entire deployment lifecycle is orchestrated via a single shell script. Run the following command from the root directory:

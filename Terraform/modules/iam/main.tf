@@ -1,5 +1,5 @@
 resource "aws_iam_role" "ec2_role" {
-  name = "backend-ec2-role"
+  name = var.role_name # שימוש במשתנה במקום ערך קשיח
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -32,22 +32,28 @@ resource "aws_iam_role_policy" "app_permissions" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = "*" 
+        Resource = var.secret_arn 
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = var.s3_bucket_arn 
       },
       {
         Effect = "Allow"
         Action = [
           "s3:PutObject",
           "s3:GetObject",
-          "s3:ListBucket",
           "s3:DeleteObject"
         ]
-        Resource = "*" 
+        Resource = "${var.s3_bucket_arn}/*"
       },
       {
         Effect = "Allow"
         Action = "sns:Publish"
-        Resource = "*"
+        Resource = var.sns_topic_arn
       },
       {
         Effect = "Allow"
@@ -56,7 +62,7 @@ resource "aws_iam_role_policy" "app_permissions" {
           "sqs:ReceiveMessage",
           "sqs:GetQueueAttributes"
         ]
-        Resource = "*" 
+        Resource = var.sqs_queue_arn 
       }
     ]
   })

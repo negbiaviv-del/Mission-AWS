@@ -3,14 +3,16 @@
 # עוצר את הסקריפט אם משהו נכשל
 set -e
 
-echo "🚀 [1/3] Starting Terraform deployment..."
+echo "🚀 [1/3] Planning Terraform deployment..."
 cd Terraform
-terraform apply -auto-approve
+# יצירת תוכנית ושמירתה לקובץ
+terraform plan -out=infrastructure.plan
+
+echo "🚀 [2/3] Applying Terraform deployment..."
+# הרצת ה-apply מתוך הקובץ השמור (ללא צורך ב-auto-approve)
+terraform apply "infrastructure.plan"
 
 echo "✅ Terraform deployed and Dynamic Inventory generated successfully!"
-
-echo "⏳ [2/3] Waiting 30 seconds for EC2 instances to wake up and start SSH..."
-sleep 30
 
 echo "🛠️ [3/3] Launching Ansible configuration..."
 cd ../ansible 

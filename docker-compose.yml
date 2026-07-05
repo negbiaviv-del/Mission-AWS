@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      # שאיבת הנתונים מהקובץ החיצוני
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./Backend
+    ports:
+      # שימוש במשתנה עבור הפורט החיצוני
+      - "${BACKEND_PORT}:5000"
+    environment:
+      # הרכבת הכתובת מתוך המשתנים
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      HOST: 0.0.0.0
+      PORT: 5000
+    depends_on:
+      db:
+        condition: service_healthy
+
+# ... (שאר הקובץ נשאר אותו הדבר: worker, frontend, networks)
+  worker:
+    build: ./Worker
+    env_file:
+      - ./Worker/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:secret@db:5432/appdb
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./Frontend
+    ports:
+      - "8080:80" # כאן בוצע השינוי
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+
+# הבלוק החדש שמוסיפים
+networks:
+  default:
+    name: mission-aws_app-net # כאן אתה יכול לכתוב כל שם שתרצה
