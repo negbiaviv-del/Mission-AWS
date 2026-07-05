@@ -1,9 +1,0 @@
--  name: uninstall nginx
-   hosts: all
-   become: true
-
-   tasks:
-     - name: remove the package 
-       ansible.builtin.package:
-          name: nginx
-          state: absent
