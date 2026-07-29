@@ -111,3 +111,7 @@ During the evolution of this project, particularly the migration to Kubernetes, 
 3. **Dynamic Inventory vs. Hardcoding**
    * **Problem:** Managing environment variables that are determined only at runtime (like RDS and S3 endpoints) in a Kubernetes environment without committing them to Git.
    * **Solution:** Implemented a dynamic Ansible pipeline that reads the local terraform.tfstate and patches the live cluster using kubectl patch secret and kubectl annotate serviceaccount, creating a bulletproof, automated handoff between IaC and Kubernetes orchestration.
+   
+4. **IAM Roles (IRSA) & SQS Visibility Loop**
+   * **Problem:** The Worker pod initially experienced an `AccessDenied` error when assuming the IAM role via OIDC. After fixing the trust policy, the Worker successfully read messages and triggered SNS, but entered an infinite loop, processing the same message over and over.
+   * **Solution:** First, updated the AWS Trust Policy `Condition` array to explicitly trust both `backend-sa` and `worker-sa`. Second, realized the SQS visibility timeout was expiring because the Worker lacked deletion permissions. Added the `sqs:DeleteMessage` action to the Terraform IAM policy, allowing the Worker to properly complete the message lifecycle and break the loop.
