@@ -3,25 +3,24 @@ FROM python:3.11-slim
 # הגדרת תיקיית העבודה בתוך הקונטיינר
 WORKDIR /app
 
-# העתקת קובץ הדרישות קודם (כדי לחסוך זמן בבנייה חוזרת)
+# העתקת קובץ הדרישות קודם
 COPY requirements.txt .
 
-# התקנת הספריות
-RUN pip install --no-cache-dir -r requirements.txt
+# התקנת הספריות וגוניקורן יחד בשלב מוקדם
+RUN pip install --no-cache-dir -r requirements.txt && pip install gunicorn
 
-# העתקת שאר קבצי הפרויקט (קוד, תמונות, HTML)
+# העתקת שאר קבצי הפרויקט
 COPY . .
 
-# פתיחת פורט 5000 כלפי חוץ (לדוקר)
-EXPOSE 5000
-
-# הפקודה שמריצה את השרת
-RUN pip install gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
-
-# העתקת הסקריפט לקונטיינר
+# העתקת הסקריפט לקונטיינר והפיכתו לבר-ביצוע
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# פתיחת פורט 5000 כלפי חוץ
+EXPOSE 5000
+
 # שימוש בסקריפט כנקודת כניסה
 ENTRYPOINT ["/entrypoint.sh"]
+
+# הפקודה שתועבר ל-entrypoint (תמיד בסוף הקובץ!)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

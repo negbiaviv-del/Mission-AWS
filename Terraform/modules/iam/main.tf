@@ -1,19 +1,28 @@
+# יצירת ה-Role עם הרשאות WebIdentity לקוברנטיס
 resource "aws_iam_role" "ec2_role" {
-  name = var.role_name # שימוש במשתנה במקום ערך קשיח
+  name = var.role_name 
+  
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sts:AssumeRole"
+        Action = "sts:AssumeRoleWithWebIdentity"
         Effect = "Allow"
         Principal = {
-          Service = "ec2.amazonaws.com"
+          Federated = var.oidc_provider_arn # <--- שימוש ישיר במשתנה
+        }
+        Condition = {
+          StringEquals = {
+            "${replace(var.cluster_oidc_issuer_url, "https://", "")}:sub": "system:serviceaccount:devops-app:backend-sa",
+            "${replace(var.cluster_oidc_issuer_url, "https://", "")}:aud": "sts.amazonaws.com"
+          }
         }
       }
     ]
   })
 }
 
+# חיבור הפוליסות
 resource "aws_iam_role_policy_attachment" "ssm_attach" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"

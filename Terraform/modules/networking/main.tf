@@ -174,7 +174,7 @@ resource "aws_security_group" "backend_sg" {
   }
 }
 
-# שומר עבור ה-RDS (פתוח רק ל-Backend)
+# שומר עבור ה-RDS
 resource "aws_security_group" "db_sg" {
   name   = "rds-db-sg"
   vpc_id = aws_vpc.main.id
@@ -183,7 +183,14 @@ resource "aws_security_group" "db_sg" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.backend_sg.id] # גישה רק מה-Backend!
+    security_groups = [aws_security_group.backend_sg.id]
+  }
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   egress {

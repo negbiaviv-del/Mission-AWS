@@ -1,3 +1,26 @@
+# --- הגדרות התחברות לקוברנטיס ו-Helm ---
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    }
+  }
+}
+
 # --- מודול רשת (Networking) ---
 module "networking" {
   source   = "./modules/networking"
@@ -7,7 +30,11 @@ module "networking" {
 
 # --- מודול הרשאות (IAM) ---
 module "iam" {
-  source        = "./modules/iam"
+  source                  = "./modules/iam"
+  
+  oidc_provider_arn       = module.eks.oidc_provider_arn
+  cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
+  
   role_name     = var.iam_role
   secret_arn    = module.secrets.secret_arn
   s3_bucket_arn = module.s3.bucket_arn
@@ -29,8 +56,7 @@ module "ec2_instances" {
   backend_sg_id     = module.networking.backend_sg_id
 
   iam_instance_profile_name = module.iam.iam_instance_profile_name
-  
-  }
+}
 
 # --- מודול ניהול סודות (Secrets Manager) ---
 module "secrets" {
@@ -82,7 +108,6 @@ module "sns" {
 resource "aws_sqs_queue" "worker_queue" {
   name = "mission-queue-v2"
 }
-
 
 # --- מאגרים לתמונות (ECR) ---
 resource "aws_ecr_repository" "backend_repo" {

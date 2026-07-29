@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: devops-app
+  labels:
+    app: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      # הגדרות אבטחה ברמת הפוד 
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101 # משתמש 101 הוא משתמש סטנדרטי של Nginx 
+      containers:
+      - name: frontend
+        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/my-frontend:v1.0
+        imagePullPolicy: Always
+        ports:
+        # Nginx ללא הרשאות root חייב לרוץ על פורט גבוה מ-1024
+        - containerPort: 8080 
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+            
+        # Nginx עונה לבקשות HTTP, לכן נשתמש ב-httpGet לבדיקות
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
