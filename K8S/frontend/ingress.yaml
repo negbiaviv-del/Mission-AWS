@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: devops-app
+  annotations:
+    # הגדרה נפוצה שמונעת שגיאות בניתוב בקשות
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  # כאן אנחנו מגדירים באיזה Ingress Controller להשתמש (Nginx הוא הסטנדרט הנפוץ ביותר בלימודים ובתעשייה)
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service # השם המדויק של ה-Service שיצרנו מקודם
+            port:
+              number: 80 # הפורט של ה-Service (לא הפורט של הקונטיינר)

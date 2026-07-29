@@ -26,3 +26,5 @@ inventory.ini
 .DS_Store
 .vscode/
 
+# K8S
+secret.yaml

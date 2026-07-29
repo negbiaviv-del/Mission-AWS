@@ -30,3 +30,14 @@ output "db_address" {
   description = "The address of the RDS instance"
   value       = module.rds_postgresql.db_instance_address 
 }
+
+output "db_user" {
+  description = "The database username"
+  value       = var.db_user
+}
+
+output "db_password" {
+  description = "The database password"
+  value       = var.master_db_password
+  sensitive   = true
+}

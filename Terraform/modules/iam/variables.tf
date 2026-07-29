@@ -23,3 +23,13 @@ variable "sqs_queue_arn" {
   description = "ARN of the SQS queue"
   type        = string
 }
+
+variable "oidc_provider_arn" {
+  description = "The ARN of the OIDC Provider from EKS"
+  type        = string
+}
+
+variable "cluster_oidc_issuer_url" {
+  description = "The URL of the OIDC Issuer from EKS"
+  type        = string
+}
