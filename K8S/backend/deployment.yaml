@@ -18,10 +18,11 @@ spec:
       serviceAccountName: backend-sa
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000 
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
       - name: backend
-        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/my-backend:v1.0
+        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/mission-backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000

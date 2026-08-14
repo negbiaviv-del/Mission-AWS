@@ -1,12 +1,13 @@
 import boto3
 import os
 
-# --- הגדרות (מעודכן לפי ה-ARN שלך) ---
-BUCKET_NAME = "new-mission-bucket"
-TOPIC_ARN = arn:aws:sns:us-east-1:544471418394:mission-alerts:b6d08965-e410-4815-8eb7-f58601c48552
-REGION = "us-east-1"
+# --- הגדרות נמשכות דינמית ממשתני הסביבה של קוברנטיס ---
+# כך אנחנו לא כותבים ערכים קשיחים (Hardcoded) ופותרים את ההערה בדוח!
+BUCKET_NAME = os.getenv("S3_BUCKET")
+TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
+REGION = os.getenv("AWS_REGION", "us-east-1")
 
-# שימוש ב-Session כדי להבטיח עבודה נכונה עם ה-IAM Role של ה-EC2
+# שימוש ב-Session כדי להבטיח עבודה נכונה עם ה-IAM Role של ה-EC2/IRSA
 session = boto3.Session(region_name=REGION)
 s3 = session.client('s3')
 sns = session.client('sns')
@@ -16,11 +17,16 @@ def upload_and_notify(file_path):
         print(f"❌ Error: The file {file_path} does not exist.")
         return
 
+    # וידוא שמשתני הסביבה אכן קיימים לפני ביצוע פעולות
+    if not BUCKET_NAME or not TOPIC_ARN:
+        print("❌ Error: Missing S3_BUCKET or SNS_TOPIC_ARN in environment variables.")
+        return
+
     file_name = os.path.basename(file_path)
     
     try:
         # 1. העלאה ל-S3
-        print(f"⏳ Uploading {file_name} to S3...")
+        print(f"⏳ Uploading {file_name} to S3 bucket: {BUCKET_NAME}...")
         s3.upload_file(file_path, BUCKET_NAME, file_name)
         print(f"✅ Successfully uploaded to {BUCKET_NAME}")
 
@@ -35,11 +41,11 @@ A new log file has been processed successfully:
 📦 Bucket: {BUCKET_NAME}
 ✅ Status: Success
 
-The system is running smoothly via Internet Gateway.
+The system is running smoothly via Kubernetes.
 ----------------------------------
         """
         
-        print(f"⏳ Sending clean notification to SNS...")
+        print(f"⏳ Sending clean notification to SNS topic: {TOPIC_ARN}...")
         sns.publish(
             TopicArn=TOPIC_ARN,
             Message=friendly_message,
@@ -50,6 +56,6 @@ The system is running smoothly via Internet Gateway.
     except Exception as e:
         print(f"❌ unexpected Error: {e}")
 
-# הרצה על קובץ הבדיקה שיצרנו
+# הרצה על קובץ הבדיקה
 if __name__ == "__main__":
     upload_and_notify("/home/ec2-user/logs/test.log")
