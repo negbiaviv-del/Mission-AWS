@@ -16,27 +16,24 @@ spec:
         app: worker
     spec:
       serviceAccountName: worker-sa
-      
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
-        
+        fsGroup: 1000
       containers:
       - name: worker
-        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/my-worker:v1.0
-        
+        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/mission-worker:latest
+        imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-            
         envFrom:
         - configMapRef:
             name: app-config
         - secretRef:
             name: app-secrets
-            
         resources:
           requests:
             memory: "128Mi"
@@ -44,8 +41,6 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "250m"
-            
-        # בדיקת תקינות חלופית (מכיוון שאין פורט פתוח ל-Worker)
         livenessProbe:
           exec:
             command:
@@ -53,7 +48,6 @@ spec:
             - /app
           initialDelaySeconds: 5
           periodSeconds: 15
-          
         readinessProbe:
           exec:
             command:

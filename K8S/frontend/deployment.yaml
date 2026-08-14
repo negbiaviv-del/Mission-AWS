@@ -15,24 +15,21 @@ spec:
       labels:
         app: frontend
     spec:
-      # הגדרות אבטחה ברמת הפוד 
       securityContext:
         runAsNonRoot: true
-        runAsUser: 101 # משתמש 101 הוא משתמש סטנדרטי של Nginx 
+        runAsUser: 101
+        fsGroup: 101
       containers:
       - name: frontend
-        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/my-frontend:v1.0
+        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/mission-frontend:latest
         imagePullPolicy: Always
         ports:
-        # Nginx ללא הרשאות root חייב לרוץ על פורט גבוה מ-1024
         - containerPort: 8080 
-        
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
-            
         resources:
           requests:
             memory: "64Mi"
@@ -40,15 +37,12 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "100m"
-            
-        # Nginx עונה לבקשות HTTP, לכן נשתמש ב-httpGet לבדיקות
         livenessProbe:
           httpGet:
             path: /
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 15
-          
         readinessProbe:
           httpGet:
             path: /

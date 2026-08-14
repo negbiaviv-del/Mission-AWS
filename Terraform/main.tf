@@ -119,6 +119,10 @@ resource "aws_ecr_repository" "worker_repo" {
   name         = "mission-worker"
   force_delete = true
 }
+resource "aws_ecr_repository" "frontend_repo" {
+  name         = "mission-frontend"
+  force_delete = true
+}
 
 # --- קובץ Inventory דינמי ל-Ansible ---
 resource "local_file" "ansible_inventory" {
@@ -156,4 +160,54 @@ ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q ec2-user@${module.ec2_
 [worker:vars]
 ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q ec2-user@${module.ec2_instances.nginx_public_ip} -i ~/.ssh/avivPair-01.pem -o StrictHostKeyChecking=no"'
 EOT
+}
+
+resource "random_password" "flask_secret" {
+  length  = 20
+  special = true
+}
+
+resource "kubernetes_namespace" "devops_app" {
+  metadata {
+    name = "devops-app"
+  }
+  depends_on = [module.eks]
+}
+
+resource "kubernetes_secret" "app_secrets" {
+  metadata {
+    name      = "app-secrets"
+    namespace = kubernetes_namespace.devops_app.metadata[0].name
+  }
+
+  data = {
+    # שים לב לוודא שהנתיב ל-db_instance_password תואם לשם המודול שלך
+    DB_PASSWORD = var.master_db_password 
+    SECRET_KEY  = random_password.flask_secret.result
+  }
+
+  type = "Opaque"
+  depends_on = [kubernetes_namespace.devops_app]
+}
+
+# הזרקת כתובות ונתונים דינמיים לקוברנטיס
+resource "kubernetes_config_map" "app_config" {
+  metadata {
+    name      = "app-config"
+    namespace = kubernetes_namespace.devops_app.metadata[0].name
+  }
+
+  data = {
+    DB_HOST    = module.rds_postgresql.db_instance_address
+    DB_NAME    = "missiondb"
+    DB_USER    = "dbadmin"
+    AWS_REGION = "us-east-1"
+    
+    # שליפה אוטומטית של הכתובות וה-ARNs ש-AWS יצר 
+    SQS_QUEUE_URL = aws_sqs_queue.worker_queue.url
+    SNS_TOPIC_ARN = module.sns.topic_arn
+    S3_BUCKET     = module.s3.bucket_name
+  }
+
+  depends_on = [kubernetes_namespace.devops_app]
 }

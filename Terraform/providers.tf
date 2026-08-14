@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = ">= 5.51.0" # <--- שונה לגרסה שתומכת ב-1.30
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -20,3 +20,4 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
+

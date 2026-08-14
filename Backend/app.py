@@ -7,14 +7,20 @@ from flask import Flask, render_template_string, request, redirect, url_for, fla
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+
+# סגירת פרצת ה-CORS: מאפשרים גישה רק למה שמגיע מה-Frontend שלנו
+# אם יש לך דומיין ספציפי, אפשר להחליף את ה-FRONTEND_URL בכתובת המדויקת
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*") 
+CORS(app, resources={r"/*": {"origins": FRONTEND_URL}})
 
 # שימוש במשתני סביבה במקום ערכים קשיחים!
 app.secret_key = os.getenv("SECRET_KEY", "default-dev-key")
 
 # --- AWS Configuration (Using Environment Variables) ---
 SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+
+# התיקון שלנו: התאמת השם בדיוק למה ש-Terraform מזריק
+S3_BUCKET_NAME = os.getenv("S3_BUCKET") 
 
 SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:544471418394:aviv-project-alerts-v2").strip()
 

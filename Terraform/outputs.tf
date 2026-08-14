@@ -41,3 +41,14 @@ output "db_password" {
   value       = var.master_db_password
   sensitive   = true
 }
+
+# פלטים חדשים שיועברו אוטומטית לסקריפט הבאש
+output "backend_iam_role_arn" {
+  description = "IAM Role ARN for the Backend ServiceAccount"
+  value       = module.iam_eks_role_backend.iam_role_arn
+}
+
+output "worker_iam_role_arn" {
+  description = "IAM Role ARN for the Worker ServiceAccount"
+  value       = module.iam_eks_role_worker.iam_role_arn
+}
