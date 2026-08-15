@@ -11,9 +11,11 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
+        # yamllint disable-line rule:line-length
         - a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
       secretName: mission-tls
   rules:
+    # yamllint disable-line rule:line-length
     - host: a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
       http:
         paths:

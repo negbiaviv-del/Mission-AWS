@@ -57,9 +57,10 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
+          base: ""
+          head: ${{ github.sha }}
           extra_args: --no-verification
-          head: HEAD
-
+          
       # סריקת קבצי הקונפיגורציה (Terraform ו-Kubernetes) לפרצות אבטחה עם Trivy
       - name: Run Trivy vulnerability scanner in fs mode
         uses: aquasecurity/trivy-action@master
