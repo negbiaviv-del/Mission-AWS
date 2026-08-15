@@ -44,7 +44,7 @@ spec:
             memory: "256Mi"
             cpu: "250m"
         readinessProbe:
-<<<<<<< HEAD
+ HEAD
           httpGet:
             path: /health
 =======
@@ -54,7 +54,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
-<<<<<<< HEAD
+ HEAD
           httpGet:
             path: /health
             port: 5000

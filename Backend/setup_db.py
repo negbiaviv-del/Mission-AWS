@@ -1,5 +1,5 @@
 import os
-<<<<<<< HEAD
+ HEAD
 import sys
 =======
 >>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
@@ -14,7 +14,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 def setup_database():
     if not DB_PASSWORD:
         print("[-] ERROR: DB_PASSWORD environment variable is missing!")
-<<<<<<< HEAD
+ HEAD
         sys.exit(1)
 =======
         exit(1)
@@ -68,7 +68,7 @@ def setup_database():
 
     except psycopg2.Error as e:
         print(f"[-] Database error: {e}")
-<<<<<<< HEAD
+ HEAD
         sys.exit(1)  # <-- התיקון: קריסה רועשת כדי שקוברנטיס יזהה את התקלה
     except Exception as e:
         print(f"[-] Unexpected error: {e}")

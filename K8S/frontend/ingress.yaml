@@ -4,7 +4,7 @@ metadata:
   name: app-ingress
   namespace: devops-app
   annotations:
-<<<<<<< HEAD
+ HEAD
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
@@ -29,7 +29,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-<<<<<<< HEAD
+ HEAD
             name: frontend-service
             port:
               number: 8080

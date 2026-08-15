@@ -42,7 +42,7 @@ module "iam" {
   sqs_queue_arn = aws_sqs_queue.worker_queue.arn
 }
 
-<<<<<<< HEAD
+ HEAD
 =======
 # --- מודול שרתים (EC2 Module) ---
 module "ec2_instances" {
@@ -83,7 +83,7 @@ module "rds_postgresql" {
   db_password = var.master_db_password
 }
 
-<<<<<<< HEAD
+ HEAD
 =======
 # --- מודול מנתב עומסים (Load Balancer) ---
 module "load_balancer" {
@@ -130,7 +130,7 @@ resource "aws_ecr_repository" "frontend_repo" {
   force_delete = true
 }
 
-<<<<<<< HEAD
+ HEAD
 =======
 # --- קובץ Inventory דינמי ל-Ansible ---
 resource "local_file" "ansible_inventory" {
@@ -190,7 +190,7 @@ resource "kubernetes_secret" "app_secrets" {
   }
 
   data = {
-<<<<<<< HEAD
+ HEAD
 =======
     # שים לב לוודא שהנתיב ל-db_instance_password תואם לשם המודול שלך
 >>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
@@ -222,7 +222,7 @@ resource "kubernetes_config_map" "app_config" {
   }
 
   depends_on = [kubernetes_namespace.devops_app]
-<<<<<<< HEAD
+ HEAD
 }
 
 # --- אבטחת ה-RDS: מתן גישה אך ורק לשרתי ה-EKS ---

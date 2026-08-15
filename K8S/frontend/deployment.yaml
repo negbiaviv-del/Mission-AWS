@@ -15,7 +15,7 @@ spec:
       labels:
         app: frontend
     spec:
-<<<<<<< HEAD
+ HEAD
       serviceAccountName: frontend-sa
       automountServiceAccountToken: false # שכבת הגנה נוספת
 =======
