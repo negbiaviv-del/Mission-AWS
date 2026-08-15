@@ -44,14 +44,24 @@ spec:
             memory: "256Mi"
             cpu: "250m"
         readinessProbe:
+<<<<<<< HEAD
           httpGet:
             path: /health
+=======
+          tcpSocket:
+>>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
             port: 5000
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
+<<<<<<< HEAD
           httpGet:
             path: /health
             port: 5000
           initialDelaySeconds: 15
+=======
+          tcpSocket:
+            port: 5000
+          initialDelaySeconds: 10
+>>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
           periodSeconds: 15

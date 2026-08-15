@@ -19,10 +19,17 @@ resource "aws_db_instance" "postgres" {
   password               = var.db_password
   
   db_subnet_group_name   = aws_db_subnet_group.rds_group.name
+<<<<<<< HEAD
   vpc_security_group_ids = [var.db_sg_id] # מתחבר אוטומטית ל-Security Group התקין
   
   publicly_accessible    = false
   skip_final_snapshot    = true
+=======
+  vpc_security_group_ids = [var.db_sg_id] # חיבור ל-Security Group המוגן
+  
+  publicly_accessible    = false # השארת בסיס הנתונים פרטי (אבטחה)
+  skip_final_snapshot    = true  # מאפשר מחיקה מהירה ללא Snapshots בסוף הפרויקט
+>>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
   
   backup_retention_period = 0 
   deletion_protection     = false
