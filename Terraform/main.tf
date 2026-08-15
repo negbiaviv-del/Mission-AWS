@@ -58,7 +58,6 @@ module "ec2_instances" {
   iam_instance_profile_name = module.iam.iam_instance_profile_name
 }
 
->>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
 # --- מודול ניהול סודות (Secrets Manager) ---
 module "secrets" {
   source             = "./modules/secrets"
@@ -81,8 +80,6 @@ module "rds_postgresql" {
   db_password = var.master_db_password
 }
 
- HEAD
-=======
 # --- מודול מנתב עומסים (Load Balancer) ---
 module "load_balancer" {
   source = "./modules/load_balancer"
@@ -95,7 +92,6 @@ module "load_balancer" {
   nginx_instance_id = module.ec2_instances.nginx_instance_id 
 }
 
->>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
 # --- מודולים נוספים (S3 & SNS) ---
 module "s3" {
   source      = "./modules/s3_bucket"
@@ -128,8 +124,6 @@ resource "aws_ecr_repository" "frontend_repo" {
   force_delete = true
 }
 
- HEAD
-=======
 # --- קובץ Inventory דינמי ל-Ansible ---
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory.ini"
@@ -168,7 +162,6 @@ ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q ec2-user@${module.ec2_
 EOT
 }
 
->>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
 resource "random_password" "flask_secret" {
   length  = 20
   special = true
@@ -188,10 +181,7 @@ resource "kubernetes_secret" "app_secrets" {
   }
 
   data = {
- HEAD
-=======
     # שים לב לוודא שהנתיב ל-db_instance_password תואם לשם המודול שלך
->>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
     DB_PASSWORD = var.master_db_password 
     SECRET_KEY  = random_password.flask_secret.result
   }
@@ -220,7 +210,7 @@ resource "kubernetes_config_map" "app_config" {
   }
 
   depends_on = [kubernetes_namespace.devops_app]
- HEAD
+ 
 }
 
 # --- אבטחת ה-RDS: מתן גישה אך ורק לשרתי ה-EKS ---
@@ -236,7 +226,4 @@ resource "aws_security_group_rule" "eks_to_rds" {
   # מזהה קבוצת האבטחה של שרתי קוברנטיס (רק הם מורשים לגשת!)
   source_security_group_id = module.eks.node_security_group_id
   
-  description              = "Allow PostgreSQL traffic ONLY from EKS nodes"
-=======
->>>>>>> 8c5805a7fcb0758e843728adb23d90532e8d21dc
 }
