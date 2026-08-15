@@ -42,8 +42,6 @@ module "iam" {
   sqs_queue_arn = aws_sqs_queue.worker_queue.arn
 }
 
- HEAD
-=======
 # --- מודול שרתים (EC2 Module) ---
 module "ec2_instances" {
   source            = "./modules/ec2"
