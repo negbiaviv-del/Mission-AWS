@@ -4,18 +4,21 @@ metadata:
   name: app-ingress
   namespace: devops-app
   annotations:
-    # הגדרה נפוצה שמונעת שגיאות בניתוב בקשות
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  # כאן אנחנו מגדירים באיזה Ingress Controller להשתמש (Nginx הוא הסטנדרט הנפוץ ביותר בלימודים ובתעשייה)
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
+    secretName: mission-tls
   rules:
-  - http:
+  - host: a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
+    http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend-service # השם המדויק של ה-Service שיצרנו מקודם
+            name: frontend-service
             port:
-              number: 80 # הפורט של ה-Service (לא הפורט של הקונטיינר)
+              number: 8080

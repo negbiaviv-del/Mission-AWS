@@ -5,32 +5,27 @@ from psycopg2.extras import RealDictCursor
 import boto3
 from flask import Flask, render_template_string, request, redirect, url_for, flash, Response, jsonify
 from flask_cors import CORS
+from datetime import datetime # <-- הוספנו ייבוא לזמן
 
 app = Flask(__name__)
 
 # סגירת פרצת ה-CORS: מאפשרים גישה רק למה שמגיע מה-Frontend שלנו
-# אם יש לך דומיין ספציפי, אפשר להחליף את ה-FRONTEND_URL בכתובת המדויקת
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*") 
 CORS(app, resources={r"/*": {"origins": FRONTEND_URL}})
 
-# שימוש במשתני סביבה במקום ערכים קשיחים!
 app.secret_key = os.getenv("SECRET_KEY", "default-dev-key")
 
-# --- AWS Configuration (Using Environment Variables) ---
+# --- AWS Configuration ---
 SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL")
-
-# התיקון שלנו: התאמת השם בדיוק למה ש-Terraform מזריק
 S3_BUCKET_NAME = os.getenv("S3_BUCKET") 
-
 SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:544471418394:aviv-project-alerts-v2").strip()
-
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
 s3_client = boto3.client('s3', region_name=AWS_REGION)
 sns_client = boto3.client('sns', region_name=AWS_REGION)
 sqs_client = boto3.client('sqs', region_name=AWS_REGION)
 
-# --- Database Configuration (Using Environment Variables) ---
+# --- Database Configuration ---
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "database": os.getenv("DB_NAME", "postgres"),
@@ -40,7 +35,6 @@ DB_CONFIG = {
 }
 
 # --- HTML Template ---
-# (השארתי את כל ה-HTML שלך בדיוק כמו שהוא)
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -280,11 +274,19 @@ HTML_TEMPLATE = """
 """
 
 def get_db_connection():
-    print(f"DEBUG: Connecting to {DB_CONFIG.get('host')} as {DB_CONFIG.get('user')}")
-    
     DB_CONFIG['sslmode'] = 'require' 
-    
     return psycopg2.connect(**DB_CONFIG)
+
+# --- הוספת נתיב Healthcheck חכם ---
+@app.route('/health')
+def health_check():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1;")
+        return jsonify({"status": "healthy", "db": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 503
 
 @app.route('/')
 def index():
@@ -317,6 +319,9 @@ def add_entry():
     
     if name and instance_type:
         try:
+            # התיקון שלנו: חותמת זמן דינמית ואמיתית!
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
             full_payload = {
                 "Base_Machine_Name": name,
                 "Number_of_Instances": instances,
@@ -324,7 +329,7 @@ def add_entry():
                 "Instance_Type": instance_type,
                 "Post_Launch_Script": script,
                 "Infrastructure_Output_Type": output_type,
-                "Created_At": "2026-04-15 17:45:00"
+                "Created_At": current_time 
             }
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
@@ -332,11 +337,8 @@ def add_entry():
                     new_id = cur.fetchone()[0]
 
             s3_key = f"logs/config_{name}.json"
-            
-            # שלב 1: כותבים ל-S3 קודם
             s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=s3_key, Body=json.dumps(full_payload, indent=4))
             
-            # שלב 2: שולחים ל-SQS רק את מפתח הקובץ (לפי דרישת המרצה)
             sqs_message = {
                 "s3_bucket": S3_BUCKET_NAME,
                 "s3_key": s3_key,
@@ -353,6 +355,7 @@ def add_entry():
 💿  OS:        {os_type}
 📜  Script:    {script}
 📦  Output:    {output_type}
+🕒  Created:   {current_time}
 -------------------------------------------
 ✅ Status: All details saved to RDS & S3
 🛠️  Managed by: Aviv's Cloud Infrastructure
@@ -462,7 +465,6 @@ Priority: High - Cleanup successful.
         return jsonify({"status": "success"})
 
     except Exception as e:
-        # תיקנתי כאן שגיאת הזחה (אינדנטציה) שהייתה בקוד המקורי
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':

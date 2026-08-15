@@ -15,6 +15,8 @@ spec:
       labels:
         app: frontend
     spec:
+      serviceAccountName: frontend-sa
+      automountServiceAccountToken: false # שכבת הגנה נוספת
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
