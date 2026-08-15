@@ -1,7 +1,7 @@
 # יצירת ה-Role עם הרשאות WebIdentity לקוברנטיס
 resource "aws_iam_role" "ec2_role" {
-  name = var.role_name 
-  
+  name = var.role_name
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -13,11 +13,11 @@ resource "aws_iam_role" "ec2_role" {
         }
         Condition = {
           StringEquals = {
-            "${replace(var.cluster_oidc_issuer_url, "https://", "")}:sub": [
+            "${replace(var.cluster_oidc_issuer_url, "https://", "")}:sub" : [
               "system:serviceaccount:devops-app:backend-sa",
               "system:serviceaccount:devops-app:worker-sa"
             ],
-            "${replace(var.cluster_oidc_issuer_url, "https://", "")}:aud": "sts.amazonaws.com"
+            "${replace(var.cluster_oidc_issuer_url, "https://", "")}:aud" : "sts.amazonaws.com"
           }
         }
       }
@@ -44,14 +44,14 @@ resource "aws_iam_role_policy" "app_permissions" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = var.secret_arn 
+        Resource = var.secret_arn
       },
       {
         Effect = "Allow"
         Action = [
           "s3:ListBucket"
         ]
-        Resource = var.s3_bucket_arn 
+        Resource = var.s3_bucket_arn
       },
       {
         Effect = "Allow"
@@ -63,8 +63,8 @@ resource "aws_iam_role_policy" "app_permissions" {
         Resource = "${var.s3_bucket_arn}/*"
       },
       {
-        Effect = "Allow"
-        Action = "sns:Publish"
+        Effect   = "Allow"
+        Action   = "sns:Publish"
         Resource = var.sns_topic_arn
       },
       {
@@ -75,7 +75,7 @@ resource "aws_iam_role_policy" "app_permissions" {
           "sqs:GetQueueAttributes",
           "sqs:DeleteMessage"
         ]
-        Resource = var.sqs_queue_arn 
+        Resource = var.sqs_queue_arn
       }
     ]
   })

@@ -16,8 +16,8 @@ resource "aws_instance" "backend_server" {
   subnet_id              = var.public_subnet_id
   key_name               = var.key_name
   vpc_security_group_ids = [var.backend_sg_id]
-  
-  iam_instance_profile = var.iam_instance_profile_name  
+
+  iam_instance_profile = var.iam_instance_profile_name
 
   tags = { Name = "Mission-App-Backend" }
 }
@@ -29,8 +29,8 @@ resource "aws_instance" "worker_server" {
   subnet_id              = var.public_subnet_id
   key_name               = var.key_name
   vpc_security_group_ids = [var.backend_sg_id]
-  
+
   iam_instance_profile = var.iam_instance_profile_name
-  
+
   tags = { Name = "Mission-Worker-Service" }
 }

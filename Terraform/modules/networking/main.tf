@@ -3,7 +3,7 @@ resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = { Name = "main-vpc" }
+  tags                 = { Name = "main-vpc" }
 }
 
 # 2. Internet Gateway - מאפשר יציאה לאינטרנט בחינם
@@ -24,7 +24,7 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_1.id # יושב בסאבנט הציבורי הראשון
 
-  tags = { Name = "main-nat-gateway" }
+  tags       = { Name = "main-nat-gateway" }
   depends_on = [aws_internet_gateway.gw]
 }
 
@@ -152,10 +152,10 @@ resource "aws_security_group" "backend_sg" {
 
   # גישה לאפליקציה מה-Nginx
   ingress {
-    from_port       = 5000 
+    from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
-    security_groups = [aws_security_group.nginx_sg.id] 
+    security_groups = [aws_security_group.nginx_sg.id]
   }
 
   # התיקון: גישת SSH מתאפשרת אך ורק משרת ה-Nginx (הבאסטיון שלנו)

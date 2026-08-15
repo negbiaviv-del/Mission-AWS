@@ -30,11 +30,11 @@ module "networking" {
 
 # --- מודול הרשאות (IAM) ---
 module "iam" {
-  source                  = "./modules/iam"
-  
+  source = "./modules/iam"
+
   oidc_provider_arn       = module.eks.oidc_provider_arn
   cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
-  
+
   role_name     = var.iam_role
   secret_arn    = module.secrets.secret_arn
   s3_bucket_arn = module.s3.bucket_arn
@@ -44,16 +44,16 @@ module "iam" {
 
 # --- מודול שרתים (EC2 Module) ---
 module "ec2_instances" {
-  source            = "./modules/ec2"
-  ami_id            = var.ami_id
-  instance_type     = var.instance_type
-  key_name          = var.key_name
+  source        = "./modules/ec2"
+  ami_id        = var.ami_id
+  instance_type = var.instance_type
+  key_name      = var.key_name
 
   public_subnet_id  = module.networking.public_subnet_1_id
   private_subnet_id = module.networking.private_subnet_1_id
 
-  nginx_sg_id       = module.networking.nginx_sg_id
-  backend_sg_id     = module.networking.backend_sg_id
+  nginx_sg_id   = module.networking.nginx_sg_id
+  backend_sg_id = module.networking.backend_sg_id
 
   iam_instance_profile_name = module.iam.iam_instance_profile_name
 }
@@ -63,19 +63,19 @@ module "secrets" {
   source             = "./modules/secrets"
   secret_name        = var.secret_name
   secret_description = var.secret_description
-  db_password        = var.master_db_password 
+  db_password        = var.master_db_password
 }
 
 # --- מודול מסד נתונים (RDS PostgreSQL) ---
 module "rds_postgresql" {
   source = "./modules/rds_postgresql"
-  
-  db_sg_id   = module.networking.db_sg_id
+
+  db_sg_id = module.networking.db_sg_id
   subnet_ids = [
     module.networking.private_subnet_1_id,
     module.networking.private_subnet_2_id
   ]
-  
+
   db_username = "dbadmin"
   db_password = var.master_db_password
 }
@@ -88,8 +88,8 @@ module "load_balancer" {
     module.networking.public_subnet_1_id,
     module.networking.public_subnet_2_id
   ]
-  
-  nginx_instance_id = module.ec2_instances.nginx_instance_id 
+
+  nginx_instance_id = module.ec2_instances.nginx_instance_id
 }
 
 # --- מודולים נוספים (S3 & SNS) ---
@@ -100,8 +100,8 @@ module "s3" {
 
 module "sns" {
   source      = "./modules/sns_topic"
-  topic_name  = "aviv-project-alerts-v2" 
-  alert_email = var.my_alert_email 
+  topic_name  = "aviv-project-alerts-v2"
+  alert_email = var.my_alert_email
 }
 
 # --- תור הודעות (SQS) ---
@@ -182,11 +182,11 @@ resource "kubernetes_secret" "app_secrets" {
 
   data = {
     # שים לב לוודא שהנתיב ל-db_instance_password תואם לשם המודול שלך
-    DB_PASSWORD = var.master_db_password 
+    DB_PASSWORD = var.master_db_password
     SECRET_KEY  = random_password.flask_secret.result
   }
 
-  type = "Opaque"
+  type       = "Opaque"
   depends_on = [kubernetes_namespace.devops_app]
 }
 
@@ -202,7 +202,7 @@ resource "kubernetes_config_map" "app_config" {
     DB_NAME    = "missiondb"
     DB_USER    = "dbadmin"
     AWS_REGION = "us-east-1"
-    
+
     # שליפה אוטומטית של הכתובות וה-ARNs ש-AWS יצר 
     SQS_QUEUE_URL = aws_sqs_queue.worker_queue.url
     SNS_TOPIC_ARN = module.sns.topic_arn
@@ -210,20 +210,20 @@ resource "kubernetes_config_map" "app_config" {
   }
 
   depends_on = [kubernetes_namespace.devops_app]
- 
+
 }
 
 # --- אבטחת ה-RDS: מתן גישה אך ורק לשרתי ה-EKS ---
 resource "aws_security_group_rule" "eks_to_rds" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  
+  type      = "ingress"
+  from_port = 5432
+  to_port   = 5432
+  protocol  = "tcp"
+
   # מזהה קבוצת האבטחה של מסד הנתונים
-  security_group_id        = module.networking.db_sg_id
-  
+  security_group_id = module.networking.db_sg_id
+
   # מזהה קבוצת האבטחה של שרתי קוברנטיס (רק הם מורשים לגשת!)
   source_security_group_id = module.eks.node_security_group_id
-  
+
 }

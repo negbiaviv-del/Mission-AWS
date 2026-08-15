@@ -28,7 +28,7 @@ output "load_balancer_dns" {
 
 output "db_address" {
   description = "The address of the RDS instance"
-  value       = module.rds_postgresql.db_instance_address 
+  value       = module.rds_postgresql.db_instance_address
 }
 
 output "db_user" {

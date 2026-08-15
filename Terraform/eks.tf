@@ -21,13 +21,13 @@ module "eks" {
       min_size       = 1
       max_size       = 3
       desired_size   = 2
-      instance_types = ["t3.small"] 
+      instance_types = ["t3.small"]
       ami_type       = "AL2_x86_64" # <--- הוסף את השורה הזו
     }
   }
 
   # מאפשר לקוברנטיס לתת הרשאות IAM לפודים
-  enable_irsa = true
+  enable_irsa                              = true
   enable_cluster_creator_admin_permissions = true
 
   tags = {
@@ -44,7 +44,7 @@ output "configure_kubectl" {
 
 # --- טריק DevOps: המתנה להתעוררות הקלאסטר לפני התקנת ה-Helm ---
 resource "time_sleep" "wait_for_eks" {
-  depends_on = [module.eks]
+  depends_on      = [module.eks]
   create_duration = "30s"
 }
 
@@ -78,8 +78,8 @@ resource "aws_iam_policy" "backend_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:PutObject",
           "sqs:SendMessage",
           "sns:Publish"
@@ -115,8 +115,8 @@ resource "aws_iam_policy" "worker_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
