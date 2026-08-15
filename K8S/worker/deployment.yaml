@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,7 +7,7 @@ metadata:
   labels:
     app: worker
 spec:
-  replicas: 2 
+  replicas: 1
   selector:
     matchLabels:
       app: worker
@@ -21,37 +22,31 @@ spec:
         runAsUser: 1000
         fsGroup: 1000
       containers:
-      - name: worker
-        image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/mission-worker:latest
-        imagePullPolicy: Always
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-        envFrom:
-        - configMapRef:
-            name: app-config
-        - secretRef:
-            name: app-secrets
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "250m"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /app
-          initialDelaySeconds: 5
-          periodSeconds: 15
-        readinessProbe:
-          exec:
-            command:
-            - ls
-            - /app
-          initialDelaySeconds: 5
-          periodSeconds: 10
+        - name: worker
+          # yamllint disable-line rule:line-length
+          image: 544471418394.dkr.ecr.us-east-1.amazonaws.com/mission-worker:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          livenessProbe:
+            exec:
+              command:
+                - cat
+                - /app/worker_sqs.py
+            initialDelaySeconds: 10
+            periodSeconds: 15

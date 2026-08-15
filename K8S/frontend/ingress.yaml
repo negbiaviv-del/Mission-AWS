@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -9,17 +10,17 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
-    secretName: mission-tls
+    - hosts:
+        - a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
+      secretName: mission-tls
   rules:
-  - host: a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 80
+    - host: a53becb74caa04a62917fce99b28bca5-624598161.us-east-1.elb.amazonaws.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
