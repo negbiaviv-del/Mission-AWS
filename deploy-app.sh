@@ -67,6 +67,7 @@ echo "📝 [7/7] Applying Kubernetes manifests (Generating dynamic Ingress)..."
 cd K8S
 
 cat <<EOF > frontend/ingress.yaml
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -74,23 +75,27 @@ metadata:
   namespace: devops-app
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - $LB_HOSTNAME
-    secretName: mission-tls
+    - hosts:
+        # yamllint disable-line rule:line-length
+        - $LB_HOSTNAME
+      secretName: mission-tls
   rules:
-  - host: $LB_HOSTNAME
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 8080
+    # yamllint disable-line rule:line-length
+    - host: $LB_HOSTNAME
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
 EOF
 
 if [ -f "network-policies.yaml" ]; then
