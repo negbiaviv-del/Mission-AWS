@@ -241,7 +241,7 @@ While this project simulates a robust cloud environment, certain intentional tra
 2. **Manual Secret Management:** Secrets are currently loaded from a local `.env` file via a bash script. A production-grade system would integrate a secrets manager like AWS Secrets Manager or HashiCorp Vault.
 3. **Single Availability Zone Database:** The RDS instance is deployed without Multi-AZ enabled to minimize AWS costs during development.
 4. **Deployment Automation:** The deployment currently relies on a local Bash script (`deploy-app.sh`). The ideal state for Kubernetes deployments is a GitOps approach utilizing tools like ArgoCD or Flux.
-
+ 
 flowchart TD
     User([User Browser]) -- "HTTPS / Port 443<br>Self-Signed TLS" --> ALB["AWS Application Load Balancer<br>Nginx Ingress Controller"]
     
