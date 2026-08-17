@@ -12,7 +12,7 @@ def setup_database():
     if not DB_PASSWORD:
         print("[-] ERROR: DB_PASSWORD environment variable is missing!")
         sys.exit(1)
-        exit(1)
+        
     conn = None
     cur = None
     try:
@@ -36,9 +36,7 @@ def setup_database():
         """)
         
         # 2. אוטומציה: תיקון מבנה (Migration)
-        # שורה זו מוודאת שהעמודה תמיד תהיה TEXT, גם אם היא נוצרה בעבר כ-VARCHAR
         cur.execute("ALTER TABLE mission_data ALTER COLUMN status TYPE TEXT;")
-        
         conn.commit()
         print("Database schema verified and set to TEXT.")
 
@@ -61,12 +59,10 @@ def setup_database():
 
     except psycopg2.Error as e:
         print(f"[-] Database error: {e}")
-        sys.exit(1)  # <-- התיקון: קריסה רועשת כדי שקוברנטיס יזהה את התקלה
+        sys.exit(1)  # קריסה רועשת כדי שקוברנטיס יזהה את התקלה
     except Exception as e:
         print(f"[-] Unexpected error: {e}")
-        sys.exit(1)  # <-- התיקון: קריסה רועשת
-    except Exception as e:
-        print(f"[-] Unexpected error: {e}")
+        sys.exit(1)  # קריסה רועשת
     finally:
         if cur: cur.close()
         if conn: conn.close()

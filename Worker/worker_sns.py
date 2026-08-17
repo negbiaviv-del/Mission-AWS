@@ -2,12 +2,11 @@ import boto3
 import os
 
 # --- הגדרות נמשכות דינמית ממשתני הסביבה של קוברנטיס ---
-# כך אנחנו לא כותבים ערכים קשיחים (Hardcoded) ופותרים את ההערה בדוח!
 BUCKET_NAME = os.getenv("S3_BUCKET")
 TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
 REGION = os.getenv("AWS_REGION", "us-east-1")
 
-# שימוש ב-Session כדי להבטיח עבודה נכונה עם ה-IAM Role של ה-EC2/IRSA
+# שימוש ב-Session כדי להבטיח עבודה נכונה עם ה-IAM Role (IRSA)
 session = boto3.Session(region_name=REGION)
 s3 = session.client('s3')
 sns = session.client('sns')
@@ -54,8 +53,12 @@ The system is running smoothly via Kubernetes.
         print("🎉 Success! Clean notification sent to your email.")
 
     except Exception as e:
-        print(f"❌ unexpected Error: {e}")
+        print(f"❌ Unexpected Error: {e}")
 
-# הרצה על קובץ הבדיקה
 if __name__ == "__main__":
-    upload_and_notify("/home/ec2-user/logs/test.log")
+    # יצירת קובץ זמני גנרי לבדיקה (מותאם לקונטיינר במקום שרת EC2)
+    test_file = "/tmp/kubernetes_test.log"
+    with open(test_file, "w") as f:
+        f.write("Kubernetes automated test log content.")
+    
+    upload_and_notify(test_file)

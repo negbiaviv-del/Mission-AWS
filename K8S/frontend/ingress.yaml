@@ -12,11 +12,11 @@ spec:
   tls:
     - hosts:
         # yamllint disable-line rule:line-length
-        - a3e78cec9507740208bc79e3085257ce-2029120698.us-east-1.elb.amazonaws.com
+        - a6d620dff3eac490399c417ab62de235-1512107249.us-east-1.elb.amazonaws.com
       secretName: mission-tls
   rules:
     # yamllint disable-line rule:line-length
-    - host: a3e78cec9507740208bc79e3085257ce-2029120698.us-east-1.elb.amazonaws.com
+    - host: a6d620dff3eac490399c417ab62de235-1512107249.us-east-1.elb.amazonaws.com
       http:
         paths:
           - path: /
@@ -26,3 +26,4 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
+
