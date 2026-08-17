@@ -1,26 +1,31 @@
 FROM python:3.11-slim
 
-# הגדרת תיקיית העבודה בתוך הקונטיינר
+# 1. יצירת משתמש וקבוצה Non-Root (פותר את הערת האבטחה של אביעד!)
+RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser
+
 WORKDIR /app
 
-# העתקת קובץ הדרישות קודם
+# 2. העתקה והתקנה של דרישות הפרויקט
 COPY requirements.txt .
-
-# התקנת הספריות וגוניקורן יחד בשלב מוקדם
 RUN pip install --no-cache-dir -r requirements.txt && pip install gunicorn
 
-# העתקת שאר קבצי הפרויקט
+# 3. העתקת שאר קבצי הפרויקט
 COPY . .
 
-# העתקת הסקריפט לקונטיינר והפיכתו לבר-ביצוע
+# 4. העתקת סקריפט ההפעלה ומתן הרשאות ביצוע
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# פתיחת פורט 5000 כלפי חוץ
+# 5. העברת הבעלות על תיקיית האפליקציה למשתמש החדש שלנו
+RUN chown -R appuser:appuser /app /entrypoint.sh
+
+# 6. מעבר למשתמש ה-Non-Root
+USER appuser
+ENV HOME=/home/appuser
+
 EXPOSE 5000
 
-# שימוש בסקריפט כנקודת כניסה
 ENTRYPOINT ["/entrypoint.sh"]
 
-# הפקודה שתועבר ל-entrypoint (תמיד בסוף הקובץ!)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# 7. הפעלה נכונה של Gunicorn עם הגדרת תיקייה זמנית חוקית
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "--bind", "0.0.0.0:5000", "app:app"]
