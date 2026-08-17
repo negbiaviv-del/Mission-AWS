@@ -96,44 +96,6 @@ resource "aws_ecr_repository" "frontend_repo" {
   force_delete = true
 }
 
-# --- קובץ Inventory דינמי ל-Ansible ---
-resource "local_file" "ansible_inventory" {
-  filename = "${path.module}/../ansible/inventory.ini"
-
-  content = <<EOT
-[frontend]
-${module.ec2_instances.nginx_public_ip}
-
-[backend]
-${module.ec2_instances.backend_private_ip}
-
-[worker]
-${module.ec2_instances.worker_private_ip}
-
-[all:vars]
-ansible_user=ec2-user
-ansible_ssh_private_key_file=~/.ssh/avivPair-01.pem
-
-# Database Variables
-rds_db_endpoint="${module.rds_postgresql.db_instance_address}"
-rds_db_name="missiondb"
-rds_db_user="dbadmin"
-rds_db_password="${var.master_db_password}"
-
-# AWS Services Variables 
-aws_region="us-east-1"
-s3_bucket_name="${module.s3.bucket_name}"
-sns_topic_arn="${module.sns.topic_arn}" 
-sqs_queue_url="${aws_sqs_queue.worker_queue.url}"
-
-[backend:vars]
-ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q ec2-user@${module.ec2_instances.nginx_public_ip} -i ~/.ssh/avivPair-01.pem -o StrictHostKeyChecking=no"'
-
-[worker:vars]
-ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q ec2-user@${module.ec2_instances.nginx_public_ip} -i ~/.ssh/avivPair-01.pem -o StrictHostKeyChecking=no"'
-EOT
-}
-
 resource "random_password" "flask_secret" {
   length  = 20
   special = true
