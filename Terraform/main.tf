@@ -42,22 +42,6 @@ module "iam" {
   sqs_queue_arn = aws_sqs_queue.worker_queue.arn
 }
 
-# --- מודול שרתים (EC2 Module) ---
-module "ec2_instances" {
-  source        = "./modules/ec2"
-  ami_id        = var.ami_id
-  instance_type = var.instance_type
-  key_name      = var.key_name
-
-  public_subnet_id  = module.networking.public_subnet_1_id
-  private_subnet_id = module.networking.private_subnet_1_id
-
-  nginx_sg_id   = module.networking.nginx_sg_id
-  backend_sg_id = module.networking.backend_sg_id
-
-  iam_instance_profile_name = module.iam.iam_instance_profile_name
-}
-
 # --- מודול ניהול סודות (Secrets Manager) ---
 module "secrets" {
   source             = "./modules/secrets"
@@ -78,18 +62,6 @@ module "rds_postgresql" {
 
   db_username = "dbadmin"
   db_password = var.master_db_password
-}
-
-# --- מודול מנתב עומסים (Load Balancer) ---
-module "load_balancer" {
-  source = "./modules/load_balancer"
-  vpc_id = module.networking.vpc_id
-  subnet_ids = [
-    module.networking.public_subnet_1_id,
-    module.networking.public_subnet_2_id
-  ]
-
-  nginx_instance_id = module.ec2_instances.nginx_instance_id
 }
 
 # --- מודולים נוספים (S3 & SNS) ---
