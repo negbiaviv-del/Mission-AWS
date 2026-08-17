@@ -242,7 +242,34 @@ While this project simulates a robust cloud environment, certain intentional tra
 3. **Single Availability Zone Database:** The RDS instance is deployed without Multi-AZ enabled to minimize AWS costs during development.
 4. **Deployment Automation:** The deployment currently relies on a local Bash script (`deploy-app.sh`). The ideal state for Kubernetes deployments is a GitOps approach utilizing tools like ArgoCD or Flux.
 
-
-
-
-  
+flowchart TD
+    User([User Browser]) -- "HTTPS / Port 443<br>Self-Signed TLS" --> ALB["AWS Application Load Balancer<br>Nginx Ingress Controller"]
+    
+    subgraph Cloud ["AWS Cloud"]
+        subgraph VPC ["AWS VPC"]
+            ALB -- "Forward Port 8080" --> EKS
+            
+            subgraph EKS ["Amazon EKS Cluster (v1.31)<br>Namespace: devops-app<br>Network Policies: Default Deny"]
+                Front["Frontend (Deployment)<br>Nginx Reverse Proxy - Non-Root"]
+                Back["Backend (Deployment)<br>Flask API - Non-Root<br>IRSA: backend-role"]
+                Worker["Worker (Deployment)<br>SQS Listener - Non-Root<br>IRSA: worker-role"]
+                
+                Front -- "Internal Route (Port 5000)" --> Back
+            end
+            
+            RDS[("RDS PostgreSQL<br>(missiondb)<br>Private Subnet")]
+            Back -- "Port 5432" --> RDS
+        end
+        
+        subgraph AWS_Services ["Managed AWS Services"]
+            S3[("S3 Bucket<br>(Config Logs)")]
+            SQS>["SQS Queue<br>(mission-queue-v2)"]
+            SNS(("SNS Topic<br>(Email Alerts)"))
+            ECR["ECR<br>(Docker Images)"]
+            
+            Back -- "Write" --> S3
+            Back -- "Write" --> SQS
+            Worker -- "Read" --> SQS
+            Worker -- "Publish" --> SNS
+        end
+    end
